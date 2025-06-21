@@ -49,7 +49,8 @@ def on_button_pressed():
     It will interrupt the current agent speech.
     """
     print("Button was pressed! Interrupting agent speech...")
-    audio_interface.stop_audio()
+    audio_interface.force_interrupt()
+    conversation.send_contextual_update("The user forced an interruption.")
 
 
 button.when_pressed = on_button_pressed
