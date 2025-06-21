@@ -50,7 +50,12 @@ def on_button_pressed():
     """
     print("Button was pressed! Interrupting agent speech...")
     audio_interface.force_interrupt()
-    conversation.send_contextual_update("The user forced an interruption.")
+
+    # Send a contextual update to the agent.
+    try:
+        conversation.send_contextual_update("The user forced an interruption.")
+    except Exception as e:
+        print(f"Error sending contextual update: {e}")
 
 
 button.when_pressed = on_button_pressed
