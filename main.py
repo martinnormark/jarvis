@@ -1,0 +1,38 @@
+from gpiozero import Button
+from signal import pause
+# from apa102_pi.driver import apa102
+# from time import sleep
+
+# --- Button Setup ---
+# The button on the ReSpeaker 2-Mics HAT is connected to GPIO17.
+button = Button(17)
+
+def on_button_pressed():
+    """
+    This function will be executed when the button is pressed.
+    """
+    print("Button was pressed!")
+
+button.when_pressed = on_button_pressed
+
+print("Assistant is running. Waiting for button press...")
+
+# --- LED Example (commented out) ---
+# The ReSpeaker 2-Mics HAT has 3 APA102 RGB LEDs.
+# You can control them using the 'apa102-pi' library.
+# First, you would need to initialize the driver:
+# num_leds = 3
+# leds = apa102.APA102(num_led_or_strip=num_leds)
+
+# Then you can set the color of each LED.
+# For example, to set the first LED to red:
+# leds.set_pixel(0, 255, 0, 0)
+# leds.show()
+
+# To turn them all off:
+# leds.clear_strip()
+# leds.cleanup()
+
+# --- Main Loop ---
+# The script will pause here and wait for events, like a button press.
+pause() 
