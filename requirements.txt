@@ -2,3 +2,4 @@ gpiozero
 RPi.GPIO
 pyaudio
 apa102-pi
+elevenlabs
