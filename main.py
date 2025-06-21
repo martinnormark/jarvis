@@ -42,20 +42,27 @@ conversation = Conversation(
 # The button on the ReSpeaker 2-Mics HAT is connected to GPIO17.
 button = Button(17)
 
+# Flag to track if conversation session is active
+session_active = False
+
 
 def on_button_pressed():
     """
     This function will be executed when the button is pressed.
     It will interrupt the current agent speech.
     """
+    global session_active
     print("Button was pressed! Interrupting agent speech...")
     audio_interface.force_interrupt()
 
-    # Send a contextual update to the agent.
-    try:
-        conversation.send_contextual_update("The user forced an interruption.")
-    except Exception as e:
-        print(f"Error sending contextual update: {e}")
+    # Send a contextual update to the agent only if session is active
+    if session_active:
+        try:
+            conversation.send_contextual_update("The user clicked the button.")
+        except Exception as e:
+            print(f"Error sending contextual update: {e}")
+    else:
+        print("Conversation session not yet active, skipping contextual update")
 
 
 button.when_pressed = on_button_pressed
@@ -83,8 +90,10 @@ print("Assistant is running. Press the button to interrupt the agent's speech...
 # signal.pause()
 
 conversation.start_session()
+session_active = True  # Mark session as active after starting
 
 signal.signal(signal.SIGINT, lambda sig, frame: conversation.end_session())
 
 conversation_id = conversation.wait_for_session_end()
+session_active = False  # Mark session as inactive after ending
 print(f"Conversation ID: {conversation_id}")
