@@ -12,7 +12,7 @@ from elevenlabs.client import ElevenLabs
 from elevenlabs.conversational_ai.conversation import Conversation
 
 from .config import Config
-from ..audio.interface import InterruptibleAudioInterface
+from ..audio.interface import VolumeReducingAudioInterface
 from ..platforms.detector import PlatformDetector
 
 
@@ -38,7 +38,7 @@ class JarvisAssistant:
         self.config.validate()
 
         self.platform_detector = PlatformDetector()
-        self.audio_interface: Optional[InterruptibleAudioInterface] = None
+        self.audio_interface: Optional[VolumeReducingAudioInterface] = None
         self.conversation: Optional[Conversation] = None
         self.elevenlabs: Optional[ElevenLabs] = None
         self.session_active = False
@@ -60,7 +60,7 @@ class JarvisAssistant:
             print("✓ ElevenLabs client initialized successfully")
 
             # Create audio interface
-            self.audio_interface = InterruptibleAudioInterface(
+            self.audio_interface = VolumeReducingAudioInterface(
                 sample_rate=self.config.sample_rate,
                 input_frames=self.config.input_frames_per_buffer,
                 output_frames=self.config.output_frames_per_buffer,
@@ -122,22 +122,13 @@ class JarvisAssistant:
 
     def _on_input_detected(self) -> None:
         """Handle input detection (interrupt trigger)."""
-        print("Input detected! Interrupting agent speech...")
+        print("Input detected! Reducing agent audio volume...")
 
         try:
             if self.audio_interface:
                 self.audio_interface.force_interrupt()
         except Exception as e:
             print(f"Error during audio interruption: {e}")
-
-        # Send contextual update to agent if session is active
-        if self.session_active and self.conversation:
-            try:
-                self.conversation.send_user_message("The user forced an interruption.")
-            except Exception as e:
-                print(f"Error sending contextual update: {e}")
-        else:
-            print("Conversation session not yet active, skipping contextual update")
 
     def _on_agent_response(self, response: str) -> None:
         """Handle agent response callback."""
@@ -150,6 +141,12 @@ class JarvisAssistant:
     def _on_user_transcript(self, transcript: str) -> None:
         """Handle user transcript callback."""
         print(f"User: {transcript}")
+        # Resume normal volume when user starts speaking
+        if self.audio_interface:
+            try:
+                self.audio_interface.resume_normal_volume()
+            except Exception as e:
+                print(f"Error resuming normal volume: {e}")
 
     def _signal_handler(self, sig, frame) -> None:
         """Handle shutdown signals."""

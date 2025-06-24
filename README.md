@@ -1,17 +1,36 @@
-# Jarvis - Voice Assistant with Interruptible Audio
+# Jarvis - Voice Assistant with Volume-Reducing Audio
 
-A voice assistant built with ElevenLabs Conversational AI that supports real-time audio interruption. Works on both macOS and Raspberry Pi with platform-specific input methods.
+A voice assistant built with ElevenLabs Conversational AI that supports intelligent audio interruption. Works on both macOS and Raspberry Pi with platform-specific input methods.
 
 ## Features
 
 - 🎤 **Real-time Voice Interaction**: Seamless conversation with ElevenLabs AI agents
-- ⏹️ **Interruptible Audio**: Stop the AI's speech at any time with input triggers
+- 🔊 **Volume-Reducing Interruption**: Reduces agent audio volume instead of stopping it completely
+- 🎵 **Smooth Audio Transitions**: Configurable fade duration for natural audio experience
 - 🖥️ **Cross-Platform**: Works on macOS (spacebar) and Raspberry Pi (GPIO button)
 - 🔧 **Modern Development**: Uses `uv` for fast Python package management
 - 🎯 **Platform Detection**: Automatically detects and configures for your platform
 - 🔐 **Secure Configuration**: Environment variables loaded from `.env.local` on Mac
 - 🧪 **Comprehensive Testing**: Full test suite with unit and integration tests
 - 📦 **Clean Architecture**: Well-structured, maintainable codebase
+
+## Audio Interface Comparison
+
+### Old InterruptibleAudioInterface ❌
+
+- Clears audio buffer completely when interrupted
+- Agent stops speaking immediately
+- User loses context of what agent was saying
+- Abrupt interruption experience
+
+### New VolumeReducingAudioInterface ✅
+
+- Reduces volume to 30% (configurable) when interrupted
+- Agent continues speaking at lower volume
+- User can still hear and understand the agent
+- Smooth fade transition (150ms configurable)
+- Volume automatically restores when user speaks
+- Maintains conversation context
 
 ## Quick Start
 
@@ -81,17 +100,27 @@ uv run python run.py
 uv run jarvis
 ```
 
+### Testing the New Audio Interface
+
+```bash
+# Run the demonstration script
+python demo_volume_reducing_audio.py
+
+# Run the test script
+python tests/test_volume_reducing_audio.py
+```
+
 ## Platform-Specific Features
 
 ### macOS
 
-- **Input Method**: Press **SPACEBAR** to interrupt the AI's speech
+- **Input Method**: Press **SPACEBAR** to reduce agent audio volume
 - **Dependencies**: Automatically installs `keyboard` and `python-dotenv` libraries
 - **Configuration**: Uses `.env.local` file for secure credential storage
 
 ### Raspberry Pi
 
-- **Input Method**: Press **GPIO17 button** to interrupt the AI's speech
+- **Input Method**: Press **GPIO17 button** to reduce agent audio volume
 - **Dependencies**: Automatically installs `gpiozero`, `RPi.GPIO`, and `apa102-pi`
 - **Hardware**: Compatible with ReSpeaker 2-Mics HAT
 
@@ -109,7 +138,7 @@ jarvis/
 │   │   └── config.py         # Configuration management
 │   ├── audio/                # Audio interface
 │   │   ├── __init__.py
-│   │   └── interface.py      # Interruptible audio interface
+│   │   └── interface.py      # Audio interfaces (VolumeReducing + Interruptible)
 │   ├── platforms/            # Platform-specific code
 │   │   ├── __init__.py
 │   │   ├── detector.py       # Platform detection
@@ -121,7 +150,9 @@ jarvis/
 │   ├── __init__.py
 │   ├── conftest.py           # Pytest configuration
 │   ├── unit/                 # Unit tests
+│   │   └── test_volume_reducing_audio.py  # Volume reducing audio tests
 │   └── integration/          # Integration tests
+├── demo_volume_reducing_audio.py  # Demonstration script
 ├── pyproject.toml            # Project configuration
 ├── Makefile                  # Development tasks
 ├── run.py                    # Simple entry point
@@ -210,6 +241,22 @@ The audio interface is configured for:
 - **Input Buffer**: 250ms (4000 frames)
 - **Output Buffer**: 62.5ms (1000 frames)
 
+### Volume Reducing Audio Interface Settings
+
+The `VolumeReducingAudioInterface` can be customized with:
+
+- **Volume Reduction Factor**: 0.0-1.0 (default: 0.2 = 20% volume)
+- **Fade Duration**: Milliseconds for volume transition (default: 100ms)
+
+Example configuration:
+
+```python
+audio_interface = VolumeReducingAudioInterface(
+    volume_reduction_factor=0.3,  # Reduce to 30% volume
+    fade_duration_ms=150,         # 150ms fade duration
+)
+```
+
 ## Testing
 
 The project includes a comprehensive test suite:
@@ -221,6 +268,9 @@ make test
 # Run specific test categories
 make test-unit
 make test-integration
+
+# Run volume reducing audio tests specifically
+python -m pytest tests/unit/test_volume_reducing_audio.py -v
 
 # Run tests with specific markers
 uv run pytest -m "not slow"
@@ -277,9 +327,15 @@ uv run pre-commit install
    ```
 
 5. **Environment variables not loading** (macOS):
+
    - Check that `.env.local` exists and has the correct format
    - Ensure no spaces around the `=` sign in `.env.local`
    - Restart the application after editing `.env.local`
+
+6. **Volume reduction not working**:
+   - Check that you're using the `VolumeReducingAudioInterface`
+   - Verify the volume reduction factor is between 0.0 and 1.0
+   - Ensure the fade duration is reasonable (50-500ms recommended)
 
 ### Platform Detection
 
