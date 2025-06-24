@@ -1,10 +1,8 @@
 """Audio interface modules for Jarvis."""
 
-from .interface import (
-    InterruptibleAudioInterface,
-    VolumeReducingAudioInterface,
-    SileroVADAudioInterface,
-)
+from .interruptible import InterruptibleAudioInterface
+from .volume_reducing import VolumeReducingAudioInterface
+from .silero_vad import SileroVADAudioInterface
 
 __all__ = [
     "InterruptibleAudioInterface",
