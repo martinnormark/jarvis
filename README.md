@@ -1,12 +1,14 @@
-# Jarvis - Voice Assistant with Volume-Reducing Audio
+# Jarvis - Voice Assistant with Intelligent Audio Interfaces
 
-A voice assistant built with ElevenLabs Conversational AI that supports intelligent audio interruption. Works on both macOS and Raspberry Pi with platform-specific input methods.
+A voice assistant built with ElevenLabs Conversational AI that supports multiple intelligent audio interruption methods. Works on both macOS and Raspberry Pi with platform-specific input methods.
 
 ## Features
 
 - 🎤 **Real-time Voice Interaction**: Seamless conversation with ElevenLabs AI agents
+- 🤖 **Multiple Audio Interfaces**: Choose from manual interruption, volume reduction, or automatic VAD
 - 🔊 **Volume-Reducing Interruption**: Reduces agent audio volume instead of stopping it completely
 - 🎵 **Smooth Audio Transitions**: Configurable fade duration for natural audio experience
+- 🎯 **Automatic Voice Detection**: Silero VAD automatically detects when you're speaking
 - 🖥️ **Cross-Platform**: Works on macOS (spacebar) and Raspberry Pi (GPIO button)
 - 🔧 **Modern Development**: Uses `uv` for fast Python package management
 - 🎯 **Platform Detection**: Automatically detects and configures for your platform
@@ -16,21 +18,33 @@ A voice assistant built with ElevenLabs Conversational AI that supports intellig
 
 ## Audio Interface Comparison
 
-### Old InterruptibleAudioInterface ❌
+### InterruptibleAudioInterface ❌
 
+- Manual interruption required (button press)
 - Clears audio buffer completely when interrupted
 - Agent stops speaking immediately
 - User loses context of what agent was saying
 - Abrupt interruption experience
 
-### New VolumeReducingAudioInterface ✅
+### VolumeReducingAudioInterface ✅
 
+- Manual interruption required (button press)
 - Reduces volume to 30% (configurable) when interrupted
 - Agent continues speaking at lower volume
 - User can still hear and understand the agent
 - Smooth fade transition (150ms configurable)
 - Volume automatically restores when user speaks
 - Maintains conversation context
+
+### SileroVADAudioInterface 🚀
+
+- **Automatic voice activity detection** - no manual interruption needed
+- Uses local Silero VAD model for real-time speech detection
+- Reduces volume when user speaks, restores when they stop
+- Works with 6000+ languages
+- Real-time processing (<1ms per chunk)
+- Configurable sensitivity and timing parameters
+- Most natural conversation experience
 
 ## Quick Start
 
@@ -100,14 +114,18 @@ uv run python run.py
 uv run jarvis
 ```
 
-### Testing the New Audio Interface
+### Testing the Audio Interfaces
 
 ```bash
-# Run the demonstration script
+# Test the volume reducing audio interface
 python demo_volume_reducing_audio.py
 
-# Run the test script
+# Test the Silero VAD audio interface
+python demo_silero_vad_audio.py
+
+# Run the test scripts
 python tests/test_volume_reducing_audio.py
+python tests/test_silero_vad_audio.py
 ```
 
 ## Platform-Specific Features
@@ -257,128 +275,40 @@ audio_interface = VolumeReducingAudioInterface(
 )
 ```
 
-## Testing
+### Silero VAD Audio Interface Settings
 
-The project includes a comprehensive test suite:
+The `SileroVADAudioInterface` provides automatic voice activity detection with configurable parameters:
 
-```bash
-# Run all tests with coverage
-make test
+- **Volume Reduction Factor**: 0.0-1.0 (default: 0.2 = 20% volume when user speaks)
+- **VAD Threshold**: 0.0-1.0 (default: 0.5 = speech detection sensitivity)
+- **Min Speech Duration**: Milliseconds (default: 250ms = minimum speech to trigger reduction)
+- **Min Silence Duration**: Milliseconds (default: 100ms = minimum silence to restore volume)
+- **Sample Rate**: 8000 or 16000 Hz (default: 16000 Hz)
+- **Voice Activity Callback**: Optional callback function called when user speaking state changes
 
-# Run specific test categories
-make test-unit
-make test-integration
+Example configuration:
 
-# Run volume reducing audio tests specifically
-python -m pytest tests/unit/test_volume_reducing_audio.py -v
+```python
+def voice_activity_callback(is_speaking: bool):
+    """Callback function to log voice activity detection."""
+    timestamp = time.strftime("%H:%M:%S")
+    if is_speaking:
+        print(f"🎤 [{timestamp}] User started speaking - Volume reduced")
+    else:
+        print(f"🔇 [{timestamp}] User stopped speaking - Volume restored")
 
-# Run tests with specific markers
-uv run pytest -m "not slow"
-uv run pytest -m integration
+audio_interface = SileroVADAudioInterface(
+    sample_rate=16000,              # Silero VAD supports 8000 or 16000 Hz
+    volume_reduction_factor=0.2,    # Reduce to 20% volume when user speaks
+    vad_threshold=0.5,              # VAD sensitivity (0.0-1.0)
+    min_speech_duration_ms=250,     # Minimum speech duration to trigger reduction
+    min_silence_duration_ms=100,    # Minimum silence duration to restore volume
+    voice_activity_callback=voice_activity_callback,  # Log voice activity
+)
 ```
 
-## Code Quality
+**VAD Threshold Guidelines**:
 
-The project uses several tools to maintain code quality:
-
-- **Black**: Code formatting
-- **Flake8**: Linting
-- **MyPy**: Type checking
-- **Pre-commit**: Automated quality checks
-
-```bash
-# Run all quality checks
-make lint
-
-# Format code
-make format
-
-# Install pre-commit hooks
-uv run pre-commit install
-```
-
-## Troubleshooting
-
-### Common Issues
-
-1. **"keyboard package not installed"** (macOS):
-
-   ```bash
-   make install-dev
-   ```
-
-2. **"gpiozero package not installed"** (Raspberry Pi):
-
-   ```bash
-   make install-dev
-   ```
-
-3. **Audio issues**:
-
-   - Ensure your microphone and speakers are properly connected
-   - Check system audio permissions
-   - On macOS, grant microphone access to Terminal/your IDE
-
-4. **Permission errors on Raspberry Pi**:
-
-   ```bash
-   sudo usermod -a -G gpio $USER
-   # Then log out and back in
-   ```
-
-5. **Environment variables not loading** (macOS):
-
-   - Check that `.env.local` exists and has the correct format
-   - Ensure no spaces around the `=` sign in `.env.local`
-   - Restart the application after editing `.env.local`
-
-6. **Volume reduction not working**:
-   - Check that you're using the `VolumeReducingAudioInterface`
-   - Verify the volume reduction factor is between 0.0 and 1.0
-   - Ensure the fade duration is reasonable (50-500ms recommended)
-
-### Platform Detection
-
-The system automatically detects your platform:
-
-- **macOS**: Detected as "mac"
-- **Raspberry Pi**: Detected as "pi" (checks `/proc/device-tree/model`)
-- **Other Linux**: Detected as "linux"
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run quality checks: `make dev`
-5. Submit a pull request
-
-### Development Workflow
-
-```bash
-# 1. Setup development environment
-make setup
-
-# 2. Make your changes
-# ... edit code ...
-
-# 3. Run quality checks
-make dev
-
-# 4. Run tests
-make test
-
-# 5. Commit your changes
-git add .
-git commit -m "Your commit message"
-```
-
-## Security Notes
-
-- The `.env.local` file is automatically added to `.gitignore`
-- Never commit your actual API keys to version control
-- The `env.local.example` file shows the required format without real credentials
-
-## License
-
-MIT License - see LICENSE file for details.
+- `0.0-0.3`: Very sensitive (may trigger on background noise)
+- `0.3-0.7`: Balanced (recommended for most use cases)
+- `0.7-1.0`: Less sensitive (requires louder speech)

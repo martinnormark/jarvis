@@ -27,6 +27,7 @@ dependencies = [
     "elevenlabs>=0.2.0",
     "pyaudio>=0.2.0",
     "numpy>=1.21.0",
+    "silero-vad>=4.0.0",
 ]
 
 [project.optional-dependencies]
